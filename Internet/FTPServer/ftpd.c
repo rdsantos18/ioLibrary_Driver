@@ -118,7 +118,7 @@ int current_sec = 30;
 
 int fsprintf(uint8_t s, const char *format, ...)
 {
-	int i;
+	int i = 0;
 /*
 	char buf[LINELEN];
 	FILE f;
@@ -173,11 +173,11 @@ void ftpd_init(uint8_t * src_ip)
 
 uint8_t ftpd_run(uint8_t * dbuf)
 {
-	uint16_t size = 0, i;
+	uint16_t size = 0;
 	long ret = 0;
-	uint32_t blocklen, send_byte, recv_byte;
+	uint32_t blocklen, recv_byte;
 	uint32_t remain_filesize;
-	int32_t remain_datasize;
+	int32_t remain_datasize = 0;
 	//static uint32_t con_remain_cnt1 = 0;
 	//static uint32_t con_remain_cnt2 = 0;
 #if defined(F_FILESYSTEM)
@@ -477,13 +477,13 @@ uint8_t ftpd_run(uint8_t * dbuf)
 #endif
 #if !defined(F_FILESYSTEM)
     				if (strncmp(ftp.workingdir, "/$Recycle.Bin", sizeof("/$Recycle.Bin")) != 0)
-    					size = sprintf(dbuf, "drwxr-xr-x 1 ftp ftp 0 Dec 31 2014 $Recycle.Bin\r\n-rwxr-xr-x 1 ftp ftp 512 Dec 31 2014 test.txt\r\n");
+    					size = sprintf((char *)dbuf, "drwxr-xr-x 1 ftp ftp 0 Dec 31 2014 $Recycle.Bin\r\n-rwxr-xr-x 1 ftp ftp 512 Dec 31 2014 test.txt\r\n");
 #endif
-    				size = strlen(dbuf);
+    				size = strlen((char *)dbuf);
     				send(DATA_SOCK, dbuf, size);
     				ftp.current_cmd = NO_CMD;
     				disconnect(DATA_SOCK);
-    				size = sprintf(dbuf, "226 Successfully transferred \"%s\"\r\n", ftp.workingdir);
+    				size = sprintf((char *)dbuf, "226 Successfully transferred \"%s\"\r\n", ftp.workingdir);
 					send(cur_sn, dbuf, size);
     				break;
 
@@ -533,14 +533,14 @@ uint8_t ftpd_run(uint8_t * dbuf)
 #else
 					remain_filesize = strlen(ftp.filename);
 					#if defined(_FTP_DEBUG_)
-                    printf("<<<<<1recv data[%d]\r\n", remain_datasize);
+                    printf("<<<<<1recv data[%ld]\r\n", remain_datasize);
 					#endif
 					do{
 						memset(dbuf, 0, _MAX_SS);
 
-						blocklen = sprintf(dbuf, "%s", ftp.filename);
+						blocklen = sprintf((char *)dbuf, "%s", ftp.filename);
 
-						printf("####1[%d] dbuf:%s\r\n",remain_filesize ,dbuf);
+						printf("####1[%ld] dbuf:%s\r\n",remain_filesize ,dbuf);
 
 						send(DATA_SOCK, dbuf, blocklen);
 						remain_filesize -= blocklen;
@@ -549,7 +549,7 @@ uint8_t ftpd_run(uint8_t * dbuf)
 #endif
     				ftp.current_cmd = NO_CMD;
     				disconnect(DATA_SOCK);
-    				size = sprintf(dbuf, "226 Successfully transferred \"%s\"\r\n", ftp.filename);
+    				size = sprintf((char *)dbuf, "226 Successfully transferred \"%s\"\r\n", ftp.filename);
 					send(cur_sn, dbuf, size);
     				break;
 
@@ -642,7 +642,7 @@ uint8_t ftpd_run(uint8_t * dbuf)
 								if(ret < 0)
                                 {
 									#if defined(_FTP_DEBUG_)
-                                    printf("finish ret[%d\r\n", ret);
+                                    printf("finish ret[%ld\r\n", ret);
 									#endif
                                     break;
                                 }
@@ -653,7 +653,7 @@ uint8_t ftpd_run(uint8_t * dbuf)
 
 								remain_datasize -= ret;
 								#if defined(_FTP_DEBUG_)
-                                printf("###ret:%ld,remain:%d\r\n",ret, remain_datasize);
+                                printf("###ret:%ld,remain:%ld\r\n",ret, remain_datasize);
 								#endif
 
 								if(remain_datasize <= 0)
@@ -667,7 +667,7 @@ uint8_t ftpd_run(uint8_t * dbuf)
 #endif
     				ftp.current_cmd = NO_CMD;
     				disconnect(DATA_SOCK);
-    				size = sprintf(dbuf, "226 Successfully transferred \"%s\"\r\n", ftp.filename);
+    				size = sprintf((char *)dbuf, "226 Successfully transferred \"%s\"\r\n", ftp.filename);
 					send(cur_sn, dbuf, size);
     				break;
 
@@ -762,7 +762,7 @@ uint8_t ftpd_run(uint8_t * dbuf)
 char proc_ftpd(uint8_t sn, char * buf)
 {
 	char **cmdp, *cp, *arg, *tmpstr;
-	char sendbuf[200];
+	char sendbuf[512];
 	int slen;
 	long ret;
 	

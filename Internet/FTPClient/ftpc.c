@@ -1,9 +1,9 @@
 #include "ftpc.h"
 
-un_l2cval remote_ip;
-uint16_t  remote_port;
-un_l2cval local_ip;
-uint16_t  local_port;
+static un_l2cval remote_ip;
+static uint16_t  remote_port;
+static un_l2cval local_ip;
+static uint16_t  local_port;
 uint8_t connect_state_control_ftpc = 0;
 uint8_t connect_state_data_ftpc = 0;
 uint8_t gModeActivePassiveflag = 0;
@@ -475,23 +475,23 @@ char proc_ftpc(char * buf)
 	switch(Responses){
 		case R_220:	/* Service ready for new user. */
 			printf("\r\nInput your User ID > ");
-			sprintf(dat,"USER %s\r\n", User_Keyboard_MSG());
+			sprintf((char *)dat,"USER %s\r\n", User_Keyboard_MSG());
 			printf("\r\n");
-			send(CTRL_SOCK, (uint8_t *)dat, strlen(dat));
+			send(CTRL_SOCK, (uint8_t *)dat, strlen((char *)dat));
 			break;
 
 		case R_331:	/* User name okay, need password. */
 			printf("\r\nInput your Password > ");
-			sprintf(dat,"PASS %s\r\n", User_Keyboard_MSG());
+			sprintf((char *)dat,"PASS %s\r\n", User_Keyboard_MSG());
 			printf("\r\n");
-			send(CTRL_SOCK, (uint8_t *)dat, strlen(dat));
+			send(CTRL_SOCK, (uint8_t *)dat, strlen((char *)dat));
 			break;
 		case R_230:	/* User logged in, proceed */
 			printf("\r\nUser logged in, proceed\r\n");
 
-			sprintf(dat,"TYPE %c\r\n", TransferAscii);
+			sprintf((char *)dat,"TYPE %c\r\n", TransferAscii);
 			ftpc.type = ASCII_TYPE;
-			send(CTRL_SOCK, (uint8_t *)dat, strlen(dat));
+			send(CTRL_SOCK, (uint8_t *)dat, strlen((char *)dat));
 			break;
 		case R_200:
 			if((ftpc.dsock_mode==ACTIVE_MODE)&&gModeActivePassiveflag){
@@ -576,7 +576,7 @@ uint8_t* User_Keyboard_MSG()
 {
 	uint8_t i=0;
 	do{
-		gMsgBuf[i] = ftp_getc();
+		gMsgBuf[i] = 0;				// ftp_getc();
 		i++;
 	}while(gMsgBuf[i-1]!=0x0d);
 	gMsgBuf[i-1]=0;

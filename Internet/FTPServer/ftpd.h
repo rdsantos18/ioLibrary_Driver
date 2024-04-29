@@ -28,7 +28,7 @@ extern "C" {
 #define _FTP_DEBUG_
 
 
-#define LINELEN		100
+#define LINELEN		128
 //#define DATA_BUF_SIZE	100
 #if !defined(F_FILESYSTEM)
 #define _MAX_SS		512
@@ -126,7 +126,7 @@ struct ftpd {
 	char username[LINELEN];		/* Arg to USER command */
 	char userpassword[LINELEN];
 	char workingdir[LINELEN];
-	char filename[LINELEN];
+	char filename[2*LINELEN];
 
 #if defined(F_FILESYSTEM)
 	FIL fil;	// FatFs File objects

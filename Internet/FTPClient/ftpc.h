@@ -31,7 +31,7 @@ extern "C" {
 #include "ff.h"
 #endif
 
-#ifndef	ftp_getc()
+#ifndef	ftp_getc
 #define Need_UARTGetCharBlocking_func
 #else
 /* Change library
