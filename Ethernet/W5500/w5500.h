@@ -59,17 +59,19 @@ extern "C" {
 #if   (_WIZCHIP_ == 5500)
 /// @endcond
 
-#define _W5500_IO_BASE_              0x00000000
+#define FUNC_16BIT_EN
 
-#define _W5500_SPI_READ_			   (0x00 << 2) //< SPI interface Read operation in Control Phase
-#define _W5500_SPI_WRITE_			   (0x01 << 2) //< SPI interface Write operation in Control Phase
+#define _W5500_IO_BASE_				0x00000000
 
-#define WIZCHIP_CREG_BLOCK          0x00 	//< Common register block
+#define _W5500_SPI_READ_			(0x00 << 2) //< SPI interface Read operation in Control Phase
+#define _W5500_SPI_WRITE_			(0x01 << 2) //< SPI interface Write operation in Control Phase
+
+#define WIZCHIP_CREG_BLOCK			0x00 	//< Common register block
 #define WIZCHIP_SREG_BLOCK(N)       (1+4*N) //< Socket N register block
 #define WIZCHIP_TXBUF_BLOCK(N)      (2+4*N) //< Socket N Tx buffer address block
 #define WIZCHIP_RXBUF_BLOCK(N)      (3+4*N) //< Socket N Rx buffer address block
 
-#define WIZCHIP_OFFSET_INC(ADDR, N)    (ADDR + (N<<8)) //< Increase offset address
+#define WIZCHIP_OFFSET_INC(ADDR, N)	(ADDR + (N<<8)) //< Increase offset address
 
 
 ///////////////////////////////////////
@@ -1211,6 +1213,8 @@ extern "C" {
  * @return The value of register
  */
 uint8_t  WIZCHIP_READ (uint32_t AddrSel);
+uint16_t WIZCHIP_READ_16(uint32_t AddrSel);
+
 
 /**
  * @ingroup Basic_IO_function
@@ -1220,6 +1224,7 @@ uint8_t  WIZCHIP_READ (uint32_t AddrSel);
  * @return void
  */
 void     WIZCHIP_WRITE(uint32_t AddrSel, uint8_t wb );
+void     WIZCHIP_WRITE_16(uint32_t AddrSel, uint16_t wdata);
 
 /**
  * @ingroup Basic_IO_function
@@ -1436,11 +1441,15 @@ void     WIZCHIP_WRITE_BUF(uint32_t AddrSel, uint8_t* pBuf, uint16_t len);
  * @param (uint16_t)rtr Value to set @ref _RTR_ register.
  * @sa getRTR()
  */
+#ifdef FUNC_16BIT_EN
+#define setRTR(rtr)   \
+		WIZCHIP_WRITE_16(_RTR_, rtr);
+#else
 #define setRTR(rtr)   {\
 		WIZCHIP_WRITE(_RTR_,   (uint8_t)(rtr >> 8)); \
 		WIZCHIP_WRITE(WIZCHIP_OFFSET_INC(_RTR_,1), (uint8_t) rtr); \
 	}
-
+#endif
 /**
  * @ingroup Common_register_access_function
  * @brief Get @ref _RTR_ register
@@ -1452,10 +1461,14 @@ void     WIZCHIP_WRITE_BUF(uint32_t AddrSel, uint8_t* pBuf, uint16_t len);
 #define getRTR() \
 		((WIZCHIP_READ(_RTR_) << 8) + WIZCHIP_READ(WIZCHIP_OFFSET_INC(_RTR_,1)))
 */
+#ifdef FUNC_16BIT_EN
+#define getRTR() \
+		WIZCHIP_READ_16(_RTR_);
+#else
 #define getRTR() \
 		(((uint16_t)WIZCHIP_READ(_RTR_) << 8) + WIZCHIP_READ(WIZCHIP_OFFSET_INC(_RTR_,1)))
 
-
+#endif
 /**
  * @ingroup Common_register_access_function
  * @brief Set @ref _RCR_ register

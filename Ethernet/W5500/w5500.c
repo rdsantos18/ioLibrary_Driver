@@ -74,7 +74,7 @@ uint8_t  WIZCHIP_READ(uint32_t AddrSel)
 
    if(!WIZCHIP.IF.SPI._read_burst || !WIZCHIP.IF.SPI._write_burst) 	// byte operation
    {
-	   WIZCHIP.IF.SPI._write_byte((AddrSel & 0x00FF0000) >> 16);
+        WIZCHIP.IF.SPI._write_byte((AddrSel & 0x00FF0000) >> 16);
 		WIZCHIP.IF.SPI._write_byte((AddrSel & 0x0000FF00) >>  8);
 		WIZCHIP.IF.SPI._write_byte((AddrSel & 0x000000FF) >>  0);
    }
@@ -116,6 +116,71 @@ void     WIZCHIP_WRITE(uint32_t AddrSel, uint8_t wb )
 		spi_data[2] = (AddrSel & 0x000000FF) >> 0;
 		spi_data[3] = wb;
 		WIZCHIP.IF.SPI._write_burst(spi_data, 4);
+   }
+
+   WIZCHIP.CS._deselect();
+   WIZCHIP_CRITICAL_EXIT();
+}
+
+uint16_t WIZCHIP_READ_16(uint32_t AddrSel)
+{
+   uint8_t ret[2];
+   uint8_t spi_data[3];
+
+   WIZCHIP_CRITICAL_ENTER();
+   WIZCHIP.CS._select();
+
+   AddrSel |= (_W5500_SPI_READ_ | _W5500_SPI_VDM_OP_);
+
+   if(!WIZCHIP.IF.SPI._read_burst || !WIZCHIP.IF.SPI._write_burst) 	// byte operation
+   {
+		WIZCHIP.IF.SPI._write_byte((AddrSel & 0x00FF0000) >> 16);
+		WIZCHIP.IF.SPI._write_byte((AddrSel & 0x0000FF00) >>  8);
+		WIZCHIP.IF.SPI._write_byte((AddrSel & 0x000000FF) >>  0);
+		ret[0] = WIZCHIP.IF.SPI._read_byte();
+        ret[1] = WIZCHIP.IF.SPI._read_byte();
+   }
+   else																// burst operation
+   {
+		spi_data[0] = (AddrSel & 0x00FF0000) >> 16;
+		spi_data[1] = (AddrSel & 0x0000FF00) >> 8;
+		spi_data[2] = (AddrSel & 0x000000FF) >> 0;
+		WIZCHIP.IF.SPI._write_burst(spi_data, 3);
+		WIZCHIP.IF.SPI._read_burst(ret, 2);
+   }
+
+   WIZCHIP.CS._deselect();
+   WIZCHIP_CRITICAL_EXIT();
+   return (ret[0]<<8)|ret[1];
+}
+
+void WIZCHIP_WRITE_16(uint32_t AddrSel, uint16_t wdata)
+{
+   uint8_t spi_data[3];
+   uint8_t pBuf[2];
+
+   WIZCHIP_CRITICAL_ENTER();
+   WIZCHIP.CS._select();
+
+   AddrSel |= (_W5500_SPI_WRITE_ | _W5500_SPI_VDM_OP_);
+
+   if(!WIZCHIP.IF.SPI._write_burst) 	// byte operation
+   {
+		WIZCHIP.IF.SPI._write_byte((AddrSel & 0x00FF0000) >> 16);
+		WIZCHIP.IF.SPI._write_byte((AddrSel & 0x0000FF00) >>  8);
+		WIZCHIP.IF.SPI._write_byte((AddrSel & 0x000000FF) >>  0);
+		WIZCHIP.IF.SPI._write_byte((wdata>>8)&0x00ff);
+        WIZCHIP.IF.SPI._write_byte(wdata&0x00ff);
+   }
+   else									// burst operation
+   {
+        pBuf[0] = (wdata>>8)&0x00ff;
+        pBuf[1] = wdata&0x00ff;
+		spi_data[0] = (AddrSel & 0x00FF0000) >> 16;
+		spi_data[1] = (AddrSel & 0x0000FF00) >> 8;
+		spi_data[2] = (AddrSel & 0x000000FF) >> 0;
+		WIZCHIP.IF.SPI._write_burst(spi_data, 3);
+		WIZCHIP.IF.SPI._write_burst(pBuf, 2);
    }
 
    WIZCHIP.CS._deselect();
